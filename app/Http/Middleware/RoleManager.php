@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; 
 use Symfony\Component\HttpFoundation\Response;
 
+
 class RoleManager
 {
     /**
@@ -14,43 +15,39 @@ class RoleManager
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, $role): Response
-    {
-        if(!Auth::check()){
-            return redirect()->route('login');
-        }
+    public function handle(Request $request, Closure $next, $role)
+{
+    if (!Auth::check()) {
+        return redirect()->route('login');
+    }
 
-        $authUserRole = Auth::user()->role;
+    $authUserRole = Auth::user()->role;
 
-        switch($role){
-            case 'admin':
-                if($authUserRole == 0){
-                    return $next($request);
-                }
-                break;
-            case 'vendor':
-                if($authUserRole == 1){
-                    return $next($request);
-                }
-                break;
-            case 'customer':
-                if($authUserRole == 2){
-                    return $next($request);
-                }
-                break;
-            default:
-                return redirect()->route('dashboard');
-        }
-        switch($authUserRole){
+    // map textual roles to numeric role codes
+    $map = [
+        'admin'    => 0,
+        'vendor'   => 1,
+        'customer' => 2,
+    ];
+
+    if (!isset($map[$role])) {
+        abort(403);
+    }
+
+    if ($authUserRole !== $map[$role]) {
+        // Redirect to correct dashboard based on their real role
+        switch ($authUserRole) {
             case 0:
                 return redirect()->route('admin');
             case 1:
                 return redirect()->route('vendor');
             case 2:
-                return redirect()->route('dashboard');
             default:
                 return redirect()->route('dashboard');
         }
-        return redirect()->route('login');
     }
+
+    return $next($request);
+}
+
 }
